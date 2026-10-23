@@ -36,11 +36,11 @@
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
     .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0; flex: none; background: none; border: 0; box-shadow: none; }
     .stats > div { min-width: 0; min-height: 76px; overflow: hidden; padding: 12px 13px; background: #1a2a32; border: 1px solid #30434c; border-radius: 12px; }
-    .stats > div:nth-child(-n+5) { background: linear-gradient(145deg, #21353b, #1c2c34); border-color: #3a5657; }
+    .stats > div:nth-child(-n+6) { background: linear-gradient(145deg, #21353b, #1c2c34); border-color: #3a5657; }
     .label { color: #93aeb1; font-size: 11px; font-weight: 600; letter-spacing: .35px; margin-bottom: 7px; }
     .value { font-size: clamp(14px, 1.12vw, 18px); overflow-wrap: anywhere; line-height: 1.35; }
     .stats .value { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
-    #clock, #economy { font-size: clamp(19px, 1.5vw, 24px); font-weight: 700; color: #f1d3a2; font-variant-numeric: tabular-nums; }
+    #clock, #economy, #netWorth { font-size: clamp(19px, 1.5vw, 24px); font-weight: 700; color: #f1d3a2; font-variant-numeric: tabular-nums; }
     .stats select.value { display: block; width: 100%; padding: 6px 8px; font-size: 13px; }
     .gpm-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
     .gpm-panel { flex-shrink: 0; padding: 15px 17px; }
@@ -166,7 +166,8 @@
     <div><div class="label">英雄 / 等级</div><div id="hero" class="value">—</div></div>
     <div><div class="label">K / D / A</div><div id="kda" class="value">—</div></div>
     <div><div class="label">血量 / 蓝量</div><div id="resources" class="value">—</div></div>
-    <div><div class="label">金钱 / GPM</div><div id="economy" class="value">—</div></div>
+    <div><div class="label">当前金币 / GPM</div><div id="economy" class="value">—</div></div>
+    <div><div class="label">经济总量（净资产）</div><div id="netWorth" class="value">—</div></div>
     <div><div class="label">大招状态</div><div id="ultimate" class="value">—</div></div>
     <div><div class="label">主物品栏</div><div id="items" class="value">—</div></div>
     <div><div class="label">当前地图区域（坐标推断）</div><div id="region" class="value">—</div></div>
@@ -673,7 +674,7 @@ async function refresh() {
     const s = data.state;
     drawGpmChart(gpmHistoryForDisplay(data));
     if (!s) {
-      for (const id of ['coordinates','clock','hero','kda','resources','economy','ultimate','items'])
+      for (const id of ['coordinates','clock','hero','kda','resources','economy','netWorth','ultimate','items'])
         el(id).textContent = '—';
       return;
     }
@@ -683,6 +684,7 @@ async function refresh() {
     el('kda').textContent = `${s.kills} / ${s.deaths} / ${s.assists}`;
     el('resources').textContent = `${shown(s.hp_percent)}% / ${shown(s.mana_percent)}%`;
     el('economy').textContent = `${shown(s.gold)} / ${shown(s.gpm)}`;
+    el('netWorth').textContent = shown(s.net_worth);
     const ult = {unknown:'未知', unlearned:'未学习', ready:'就绪', cooling:`冷却 ${s.ultimate_cooldown} 秒`};
     el('ultimate').textContent = ult[s.ultimate] || '未知';
     el('items').textContent = data.items_zh.length ? data.items_zh.join('、') : '空 / 未知';

@@ -74,6 +74,7 @@ class State:
     deaths: int
     assists: int
     gold: int | None
+    net_worth: int | None
     gpm: int | None
     items: tuple[str, ...]
     ultimate: str
@@ -145,6 +146,7 @@ def parse_state(payload: dict) -> State | None:
         deaths=number(player.get("deaths")),
         assists=number(player.get("assists")),
         gold=number(player["gold"]) if "gold" in player else None,
+        net_worth=number(player["net_worth"]) if "net_worth" in player else None,
         gpm=number(player["gpm"]) if "gpm" in player else None,
         items=inventory,
         ultimate=ultimate,

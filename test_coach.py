@@ -15,7 +15,7 @@ from localization import Localizer
 def packet(clock=60, alive=True, level=5, cooldown=0, item="item_boots"):
     return {
         "map": {"game_state": "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS", "clock_time": clock, "matchid": 123},
-        "player": {"kills": 1, "deaths": 0, "assists": 2, "gold": 500, "gpm": 380},
+        "player": {"kills": 1, "deaths": 0, "assists": 2, "gold": 500, "net_worth": 2150, "gpm": 380},
         "hero": {"name": "npc_dota_hero_axe", "level": level, "alive": alive,
                  "health": 800, "max_health": 1000, "mana_percent": 70},
         "abilities": {"ability3": {"ultimate": True, "level": 1, "cooldown": cooldown}},
@@ -24,6 +24,13 @@ def packet(clock=60, alive=True, level=5, cooldown=0, item="item_boots"):
 
 
 class CoachTests(unittest.TestCase):
+    def test_net_worth_is_distinct_from_current_gold_and_unknown_when_missing(self):
+        data = packet()
+        state = parse_state(data)
+        self.assertEqual((state.gold, state.net_worth, state.gpm), (500, 2150, 380))
+        del data["player"]["net_worth"]
+        self.assertIsNone(parse_state(data).net_worth)
+
     def test_gpm_history_samples_once_per_minute_and_resets_with_match(self):
         coach = Coach(role=None, voice=False)
         coach.set_paused(True)
