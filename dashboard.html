@@ -220,6 +220,44 @@
 const el = id => document.getElementById(id);
 const shown = x => x == null || x === '' ? '未知' : x;
 const svgNS = 'http://www.w3.org/2000/svg';
+const gpmStorageKey = 'dota2-coach-gpm-history-v1';
+let gpmMemory = null;
+function gpmHistoryForDisplay(data) {
+  const serverPoints = Array.isArray(data.gpm_history) ? data.gpm_history : [];
+  const state = data.state;
+  let saved = gpmMemory;
+  try { saved = JSON.parse(localStorage.getItem(gpmStorageKey) || 'null') || gpmMemory; }
+  catch (_) { /* Storage may be unavailable. */ }
+  if (!state || data.manual_game_status === 'new_match' ||
+      data.gsi_game_state !== 'DOTA_GAMERULES_STATE_GAME_IN_PROGRESS') {
+    gpmMemory = null;
+    try { localStorage.removeItem(gpmStorageKey); } catch (_) { /* Storage may be unavailable. */ }
+    return serverPoints;
+  }
+  const match = `${state.match_id}|${state.team}|${state.hero}`;
+  const continuing = saved && saved.match === match && Number.isInteger(saved.lastClock) &&
+    state.clock + 60 >= saved.lastClock;
+  const points = new Map();
+  if (continuing && Array.isArray(saved.points)) {
+    for (const point of saved.points) {
+      if (point && Number.isInteger(point.minute) && Number.isInteger(point.gpm))
+        points.set(point.minute, point.gpm);
+    }
+  }
+  for (const point of serverPoints) {
+    if (point && Number.isInteger(point.minute) && Number.isInteger(point.gpm))
+      points.set(point.minute, point.gpm);
+  }
+  const minute = Math.floor(state.clock / 60);
+  if ((!continuing || state.clock >= saved.lastClock) && Number.isInteger(state.gpm) &&
+      minute >= 0 && minute <= 360 && state.gpm >= 0 && state.gpm <= 10000)
+    points.set(minute, state.gpm);
+  const history = [...points].sort((a, b) => a[0] - b[0]).map(([minute, gpm]) => ({minute, gpm}));
+  gpmMemory = {match, lastClock: Math.max(state.clock, continuing ? saved.lastClock : state.clock), points: history};
+  try { localStorage.setItem(gpmStorageKey, JSON.stringify(gpmMemory)); }
+  catch (_) { /* The chart still works while this page remains open. */ }
+  return history;
+}
 function drawGpmChart(history) {
   const points = Array.isArray(history) ? history.filter(p => Number.isInteger(p.minute) && Number.isFinite(p.gpm)) : [];
   const chart = el('gpmChart');
@@ -229,7 +267,9 @@ function drawGpmChart(history) {
   const previous = points.at(-2), latest = points.at(-1);
   const change = el('gpmChange');
   const delta = previous && latest ? latest.gpm - previous.gpm : null;
-  change.textContent = delta == null ? '每分钟一个点' : `较上一点 ${delta > 0 ? '+' : ''}${delta} GPM`;
+  change.textContent = delta == null ?
+    (latest ? `已记录 ${latest.minute} 分钟 · 下一分钟连线` : '每分钟一个点') :
+    `较上一点 ${delta > 0 ? '+' : ''}${delta} GPM`;
   change.className = `gpm-change${delta < 0 ? ' down' : delta > 0 ? ' up' : ''}`;
   if (!points.length) return;
   const values = points.map(p => p.gpm);
@@ -237,7 +277,7 @@ function drawGpmChart(history) {
   const padding = Math.max(20, (high - low) * 0.15);
   const minY = Math.max(0, low - padding), maxY = high + padding;
   const firstMinute = points[0].minute, lastMinute = latest.minute;
-  const xy = p => ({x: 6 + 588 * (p.minute - firstMinute) / Math.max(1, lastMinute - firstMinute),
+  const xy = p => ({x: points.length === 1 ? 300 : 6 + 588 * (p.minute - firstMinute) / (lastMinute - firstMinute),
                     y: 74 - 68 * (p.gpm - minY) / Math.max(1, maxY - minY)});
   const line = (a, b, color) => {
     const path = document.createElementNS(svgNS, 'line');
@@ -254,7 +294,7 @@ function drawGpmChart(history) {
   for (const point of points) {
     const pos = xy(point), dot = document.createElementNS(svgNS, 'circle');
     dot.setAttribute('cx', pos.x); dot.setAttribute('cy', pos.y);
-    dot.setAttribute('r', point === latest ? '3.5' : '2.5');
+    dot.setAttribute('r', points.length === 1 ? '5' : point === latest ? '3.5' : '2.5');
     dot.setAttribute('fill', point === latest ? '#f5d183' : '#c6e9dd');
     const title = document.createElementNS(svgNS, 'title');
     title.textContent = `${point.minute} 分钟：${point.gpm} GPM`;
@@ -542,7 +582,7 @@ async function refresh() {
     }
     el('lane').textContent = lanes[data.starting_lane] || '观测不足';
     const s = data.state;
-    drawGpmChart(data.gpm_history);
+    drawGpmChart(gpmHistoryForDisplay(data));
     if (!s) {
       for (const id of ['coordinates','clock','hero','kda','resources','economy','ultimate','items'])
         el(id).textContent = '—';
