@@ -19,24 +19,29 @@
     .status { display: inline-block; padding: 7px 11px; border-radius: 20px; background: #51302d; color: #ffd5cf; font-size: 13px; }
     .status.online { background: #1d4939; color: #b9f5d0; }
     .workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 30%); gap: 14px; min-height: 0; }
-    .overview { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; }
+    .overview { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
     .card { background: #1c2833; border: 1px solid #354552; border-radius: 12px; padding: 12px 14px; margin: 0; min-width: 0; }
     .advice { font-size: clamp(17px, 1.45vw, 22px); line-height: 1.4; border-left: 4px solid #e5ad50; min-height: 82px; max-height: 126px; overflow: auto; }
     .enemy-alert { border-left: 4px solid #e37a62; color: #ffd6cb; }
     .enemy-alert[hidden] { display: none; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
-    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 1px; padding: 0; flex: 1; min-height: 0; overflow: hidden; background: #354552; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 1px; padding: 0; flex: 1 0 265px; min-height: 265px; overflow: hidden; background: #354552; }
     .stats > div { background: #1c2833; padding: 10px 12px; min-width: 0; min-height: 0; overflow: hidden; }
     .label { color: #aebbc5; font-size: 12px; margin-bottom: 4px; }
     .value { font-size: clamp(14px, 1.1vw, 18px); overflow-wrap: anywhere; line-height: 1.3; }
     .stats .value { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
     .stats select.value { display: block; width: 100%; padding: 5px 6px; font-size: 14px; }
     .gpm-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
-    .gpm-panel { flex-shrink: 0; padding: 9px 12px; }
+    .gpm-panel { flex-shrink: 0; padding: 10px 12px; }
+    .gpm-panel strong { font-size: 14px; }
     .gpm-change { font-size: 12px; color: #9eacb8; white-space: nowrap; }
     .gpm-change.down { color: #f28a7b; }
     .gpm-change.up { color: #81d7b6; }
-    #gpmChart { display: block; width: 100%; height: 76px; margin-top: 4px; }
+    .gpm-legend { display: flex; gap: 14px; margin-top: 5px; color: #aebbc5; font-size: 11px; }
+    .gpm-legend span::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 2px; background: #81d7b6; }
+    .gpm-legend span:last-child::before { background: #f28a7b; }
+    .gpm-viewport { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+    #gpmChart { display: block; height: 158px; margin-top: 3px; }
     .gpm-axis { display: flex; justify-content: space-between; color: #9eacb8; font-size: 11px; line-height: 1; }
     .ai-config { padding: 9px 12px; flex-shrink: 0; }
     .ai-config[open] { max-height: min(65vh, 540px); overflow: auto; }
@@ -83,12 +88,14 @@
     @media (max-width: 1200px) {
       .workspace { grid-template-columns: minmax(0, 1fr) 340px; }
       .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); }
+      .stats { flex-basis: 300px; min-height: 300px; }
       .stats > div { padding: 7px 9px; }
       .label { font-size: 11px; margin-bottom: 2px; }
     }
     @media (max-width: 850px) {
       .workspace { grid-template-columns: minmax(0, 1fr) 300px; gap: 8px; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); }
+      .stats { flex-basis: 420px; min-height: 420px; }
       .topbar p { display: none; }
       main { padding: 8px; gap: 8px; }
     }
@@ -96,7 +103,7 @@
       main { padding-top: 8px; padding-bottom: 8px; gap: 7px; }
       .overview { gap: 6px; }
       .advice { min-height: 60px; max-height: 86px; }
-      #gpmChart { height: 60px; }
+      #gpmChart { height: 135px; }
       .compact-details { padding-top: 5px; padding-bottom: 5px; }
     }
   </style>
@@ -157,9 +164,10 @@
     </select></div>
     <div><div class="label">建议所用位置</div><div id="roleSummary" class="value">尚未确认</div></div>
   </div>
-  <section class="card gpm-panel" aria-label="本局 GPM 曲线">
-    <div class="gpm-heading"><strong>本局 GPM 曲线</strong><span id="gpmChange" class="gpm-change">每分钟一个点</span></div>
-    <svg id="gpmChart" viewBox="0 0 600 80" preserveAspectRatio="none" role="img" aria-label="本局 GPM 曲线"></svg>
+  <section class="card gpm-panel" aria-label="本局 GPM 与变化速率">
+    <div class="gpm-heading"><strong>本局 GPM · 每分钟一个点</strong><span id="gpmChange" class="gpm-change">等待数据</span></div>
+    <div class="gpm-legend"><span>GPM 与上升段</span><span>GPM 下降 / 分钟变化为负</span></div>
+    <div id="gpmViewport" class="gpm-viewport"><svg id="gpmChart" viewBox="0 0 600 180" role="img" aria-label="本局 GPM 与每分钟变化速率"></svg></div>
     <div class="gpm-axis"><span id="gpmStart">等待 GPM 数据</span><span id="gpmEnd"></span></div>
   </section>
   <details class="card compact-details"><summary>高级：我知道自己是几号位 · 数据说明</summary>
@@ -259,48 +267,91 @@ function gpmHistoryForDisplay(data) {
   return history;
 }
 function drawGpmChart(history) {
-  const points = Array.isArray(history) ? history.filter(p => Number.isInteger(p.minute) && Number.isFinite(p.gpm)) : [];
+  const points = Array.isArray(history) ? history.filter(p => Number.isInteger(p.minute) && Number.isFinite(p.gpm))
+    .sort((a, b) => a.minute - b.minute) : [];
   const chart = el('gpmChart');
+  const viewport = el('gpmViewport');
+  const followLatest = viewport.scrollLeft + viewport.clientWidth >= viewport.scrollWidth - 24;
   chart.replaceChildren();
-  el('gpmStart').textContent = points.length ? `${points[0].minute} 分钟` : '等待 GPM 数据';
-  el('gpmEnd').textContent = points.length ? `${points[points.length - 1].minute} 分钟` : '';
+  el('gpmStart').textContent = '0 分钟 · 原点';
+  el('gpmEnd').textContent = points.length ? `${points[points.length - 1].minute} 分钟 · ${points[points.length - 1].gpm} GPM` : '等待 GPM 数据';
   const previous = points.at(-2), latest = points.at(-1);
   const change = el('gpmChange');
-  const delta = previous && latest ? latest.gpm - previous.gpm : null;
-  change.textContent = delta == null ?
-    (latest ? `已记录 ${latest.minute} 分钟 · 下一分钟连线` : '每分钟一个点') :
-    `较上一点 ${delta > 0 ? '+' : ''}${delta} GPM`;
+  const delta = previous && latest && latest.minute === previous.minute + 1 ? latest.gpm - previous.gpm : null;
+  change.textContent = delta == null ? (latest ? `已记录第 ${latest.minute} 分钟` : '等待数据') :
+    `本分钟变化 ${delta > 0 ? '+' : ''}${delta} GPM`;
   change.className = `gpm-change${delta < 0 ? ' down' : delta > 0 ? ' up' : ''}`;
-  if (!points.length) return;
-  const values = points.map(p => p.gpm);
-  const low = Math.min(...values), high = Math.max(...values);
-  const padding = Math.max(20, (high - low) * 0.15);
-  const minY = Math.max(0, low - padding), maxY = high + padding;
-  const firstMinute = points[0].minute, lastMinute = latest.minute;
-  const xy = p => ({x: points.length === 1 ? 300 : 6 + 588 * (p.minute - firstMinute) / (lastMinute - firstMinute),
-                    y: 74 - 68 * (p.gpm - minY) / Math.max(1, maxY - minY)});
-  const line = (a, b, color) => {
-    const path = document.createElementNS(svgNS, 'line');
-    path.setAttribute('x1', a.x); path.setAttribute('y1', a.y);
-    path.setAttribute('x2', b.x); path.setAttribute('y2', b.y);
-    path.setAttribute('stroke', color); path.setAttribute('stroke-width', '2.5');
-    path.setAttribute('vector-effect', 'non-scaling-stroke');
-    chart.append(path);
+  const step = Math.max(14, Math.floor(((viewport.clientWidth || 600) - 62) / 30));
+  const minutes = Math.max(30, (latest ? latest.minute : 0) + 2);
+  const width = Math.max(viewport.clientWidth || 600, 44 + step * minutes);
+  chart.style.width = `${width}px`;
+  chart.setAttribute('viewBox', `0 0 ${width} 180`);
+  const x = minute => 32 + minute * step;
+  const add = (tag, attributes, title) => {
+    const element = document.createElementNS(svgNS, tag);
+    for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
+    if (title) {
+      const tooltip = document.createElementNS(svgNS, 'title');
+      tooltip.textContent = title;
+      element.append(tooltip);
+    }
+    chart.append(element);
+    return element;
   };
+  const label = (value, atX, atY, anchor = 'start') => {
+    const text = add('text', {x: atX, y: atY, fill: '#aebbc5', 'font-size': 10,
+      'text-anchor': anchor, 'font-family': 'Microsoft YaHei, sans-serif'});
+    text.textContent = value;
+  };
+  const top = 14, base = 89, zero = 127;
+  const maxGpm = Math.max(100, Math.ceil((Math.max(0, ...points.map(p => p.gpm)) * 1.12) / 50) * 50);
+  const y = gpm => base - (base - top) * gpm / maxGpm;
+  for (const fraction of [0, 0.5, 1]) {
+    const atY = y(maxGpm * fraction);
+    add('line', {x1: x(0), y1: atY, x2: width - 10, y2: atY,
+      stroke: fraction === 0 ? '#698291' : '#344653', 'stroke-width': 1});
+  }
+  add('line', {x1: x(0), y1: zero, x2: width - 10, y2: zero,
+    stroke: '#698291', 'stroke-width': 1});
+  label('GPM', 2, 11);
+  label(String(maxGpm), 2, 23);
+  label('0', 20, base - 3, 'end');
+  label('Δ/分钟', 2, 112);
+  label('0', 20, zero - 3, 'end');
+  for (let minute = 0; minute <= minutes; minute += 5) {
+    add('line', {x1: x(minute), y1: top, x2: x(minute), y2: 163,
+      stroke: '#2c3c48', 'stroke-width': 1, 'stroke-dasharray': minute ? '3 5' : ''});
+    label(`${minute}m`, x(minute), 176, 'middle');
+  }
+  add('circle', {cx: x(0), cy: base, r: 3, fill: '#1c2833', stroke: '#91aab8',
+    'stroke-width': 1.5}, '坐标原点：0 分钟、0 GPM；未记录的分钟不会补点');
+  const changes = [];
   for (let i = 1; i < points.length; i++) {
     if (points[i].minute !== points[i - 1].minute + 1) continue;
-    line(xy(points[i - 1]), xy(points[i]), points[i].gpm < points[i - 1].gpm ? '#f28a7b' : '#81d7b6');
+    const a = points[i - 1], b = points[i], falling = b.gpm < a.gpm;
+    add('polygon', {points: `${x(a.minute)},${base} ${x(a.minute)},${y(a.gpm)} ${x(b.minute)},${y(b.gpm)} ${x(b.minute)},${base}`,
+      fill: falling ? '#f28a7b' : '#81d7b6', 'fill-opacity': 0.09});
+    add('line', {x1: x(a.minute), y1: y(a.gpm), x2: x(b.minute), y2: y(b.gpm),
+      stroke: falling ? '#f28a7b' : '#81d7b6', 'stroke-width': 2.5, 'stroke-linecap': 'round'});
+    changes.push({minute: b.minute, delta: b.gpm - a.gpm});
+  }
+  const maxChange = Math.max(10, ...changes.map(item => Math.abs(item.delta)));
+  for (const item of changes) {
+    const height = Math.max(2, 29 * Math.abs(item.delta) / maxChange);
+    const rising = item.delta >= 0;
+    add('rect', {x: x(item.minute) - 3.5, y: rising ? zero - height : zero,
+      width: 7, height, rx: 2, fill: rising ? '#81d7b6' : '#f28a7b',
+      opacity: 0.9}, `第 ${item.minute} 分钟：GPM 变化 ${item.delta > 0 ? '+' : ''}${item.delta}`);
   }
   for (const point of points) {
-    const pos = xy(point), dot = document.createElementNS(svgNS, 'circle');
-    dot.setAttribute('cx', pos.x); dot.setAttribute('cy', pos.y);
-    dot.setAttribute('r', points.length === 1 ? '5' : point === latest ? '3.5' : '2.5');
-    dot.setAttribute('fill', point === latest ? '#f5d183' : '#c6e9dd');
-    const title = document.createElementNS(svgNS, 'title');
-    title.textContent = `${point.minute} 分钟：${point.gpm} GPM`;
-    dot.append(title); chart.append(dot);
+    add('circle', {cx: x(point.minute), cy: y(point.gpm), r: point === latest ? 5 : 3.5,
+      fill: point === latest ? '#f5d183' : '#c6e9dd', stroke: '#1c2833',
+      'stroke-width': 1.5}, `第 ${point.minute} 分钟：${point.gpm} GPM`);
   }
-  chart.setAttribute('aria-label', `本局 GPM 曲线，${points.length} 个分钟采样点，最新 ${latest.gpm}，范围 ${low} 到 ${high}`);
+  chart.setAttribute('aria-label', points.length ?
+    `本局 GPM 与每分钟变化，${points.length} 个采样点，最新 ${latest.gpm} GPM` :
+    '本局 GPM 与每分钟变化，等待采样数据');
+  if (followLatest) viewport.scrollLeft = viewport.scrollWidth;
 }
 const markdownTags = new Set(['p','br','strong','em','del','ul','ol','li','blockquote','pre','code',
   'h1','h2','h3','h4','h5','h6','hr','a','table','thead','tbody','tr','th','td']);
