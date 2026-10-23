@@ -31,13 +31,13 @@
     .value { font-size: clamp(14px, 1.1vw, 18px); overflow-wrap: anywhere; line-height: 1.3; }
     .stats .value { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
     .stats select.value { display: block; width: 100%; padding: 5px 6px; font-size: 14px; }
-    .gpm-cell { display: flex; flex-direction: column; }
     .gpm-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
-    .gpm-change { font-size: 11px; color: #9eacb8; white-space: nowrap; }
+    .gpm-panel { flex-shrink: 0; padding: 9px 12px; }
+    .gpm-change { font-size: 12px; color: #9eacb8; white-space: nowrap; }
     .gpm-change.down { color: #f28a7b; }
     .gpm-change.up { color: #81d7b6; }
-    #gpmChart { display: block; width: 100%; height: 44px; min-height: 28px; margin-top: 3px; overflow: visible; }
-    .gpm-axis { display: flex; justify-content: space-between; color: #9eacb8; font-size: 10px; line-height: 1; }
+    #gpmChart { display: block; width: 100%; height: 76px; margin-top: 4px; }
+    .gpm-axis { display: flex; justify-content: space-between; color: #9eacb8; font-size: 11px; line-height: 1; }
     .ai-config { padding: 9px 12px; flex-shrink: 0; }
     .ai-config[open] { max-height: min(65vh, 540px); overflow: auto; }
     .ai-config summary { cursor: pointer; line-height: 1.5; }
@@ -82,14 +82,13 @@
     .dialog-footer { display: flex; gap: 8px; margin-top: 10px; }
     @media (max-width: 1200px) {
       .workspace { grid-template-columns: minmax(0, 1fr) 340px; }
-      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(6, minmax(0, 1fr)); }
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); }
       .stats > div { padding: 7px 9px; }
       .label { font-size: 11px; margin-bottom: 2px; }
     }
     @media (max-width: 850px) {
       .workspace { grid-template-columns: minmax(0, 1fr) 300px; gap: 8px; }
-      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr)); }
-      .gpm-cell { grid-row: span 2; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); }
       .topbar p { display: none; }
       main { padding: 8px; gap: 8px; }
     }
@@ -97,6 +96,7 @@
       main { padding-top: 8px; padding-bottom: 8px; gap: 7px; }
       .overview { gap: 6px; }
       .advice { min-height: 60px; max-height: 86px; }
+      #gpmChart { height: 60px; }
       .compact-details { padding-top: 5px; padding-bottom: 5px; }
     }
   </style>
@@ -140,7 +140,7 @@
     <div><div class="label">英雄 / 等级</div><div id="hero" class="value">—</div></div>
     <div><div class="label">K / D / A</div><div id="kda" class="value">—</div></div>
     <div><div class="label">血量 / 蓝量</div><div id="resources" class="value">—</div></div>
-    <div class="gpm-cell"><div class="label">金钱 / GPM</div><div class="gpm-heading"><div id="economy" class="value">—</div><span id="gpmChange" class="gpm-change"></span></div><svg id="gpmChart" viewBox="0 0 300 44" preserveAspectRatio="none" role="img" aria-label="本局 GPM 曲线"></svg><div class="gpm-axis"><span id="gpmStart">每分钟一个点</span><span id="gpmEnd"></span></div></div>
+    <div><div class="label">金钱 / GPM</div><div id="economy" class="value">—</div></div>
     <div><div class="label">大招状态</div><div id="ultimate" class="value">—</div></div>
     <div><div class="label">主物品栏</div><div id="items" class="value">—</div></div>
     <div><div class="label">当前地图区域（坐标推断）</div><div id="region" class="value">—</div></div>
@@ -157,6 +157,11 @@
     </select></div>
     <div><div class="label">建议所用位置</div><div id="roleSummary" class="value">尚未确认</div></div>
   </div>
+  <section class="card gpm-panel" aria-label="本局 GPM 曲线">
+    <div class="gpm-heading"><strong>本局 GPM 曲线</strong><span id="gpmChange" class="gpm-change">每分钟一个点</span></div>
+    <svg id="gpmChart" viewBox="0 0 600 80" preserveAspectRatio="none" role="img" aria-label="本局 GPM 曲线"></svg>
+    <div class="gpm-axis"><span id="gpmStart">等待 GPM 数据</span><span id="gpmEnd"></span></div>
+  </section>
   <details class="card compact-details"><summary>高级：我知道自己是几号位 · 数据说明</summary>
     <p class="muted">手动选择会覆盖“核心 / 辅助 + 分路”的位置推断。</p>
     <select id="role" class="value"><option value="">使用自动推断</option><option value="1">1 号位</option>
@@ -224,7 +229,7 @@ function drawGpmChart(history) {
   const previous = points.at(-2), latest = points.at(-1);
   const change = el('gpmChange');
   const delta = previous && latest ? latest.gpm - previous.gpm : null;
-  change.textContent = delta == null ? '' : `${delta > 0 ? '+' : ''}${delta} GPM`;
+  change.textContent = delta == null ? '每分钟一个点' : `较上一点 ${delta > 0 ? '+' : ''}${delta} GPM`;
   change.className = `gpm-change${delta < 0 ? ' down' : delta > 0 ? ' up' : ''}`;
   if (!points.length) return;
   const values = points.map(p => p.gpm);
@@ -232,8 +237,8 @@ function drawGpmChart(history) {
   const padding = Math.max(20, (high - low) * 0.15);
   const minY = Math.max(0, low - padding), maxY = high + padding;
   const firstMinute = points[0].minute, lastMinute = latest.minute;
-  const xy = p => ({x: 5 + 290 * (p.minute - firstMinute) / Math.max(1, lastMinute - firstMinute),
-                    y: 39 - 34 * (p.gpm - minY) / Math.max(1, maxY - minY)});
+  const xy = p => ({x: 6 + 588 * (p.minute - firstMinute) / Math.max(1, lastMinute - firstMinute),
+                    y: 74 - 68 * (p.gpm - minY) / Math.max(1, maxY - minY)});
   const line = (a, b, color) => {
     const path = document.createElementNS(svgNS, 'line');
     path.setAttribute('x1', a.x); path.setAttribute('y1', a.y);
