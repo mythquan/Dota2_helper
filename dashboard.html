@@ -5,61 +5,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dota 2 新手节奏教练</title>
   <style>
-    :root { color-scheme: dark; font-family: "Microsoft YaHei", system-ui, sans-serif; }
+    :root { color-scheme: dark; font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; }
     * { box-sizing: border-box; }
     html, body { height: 100%; overflow: hidden; }
-    body { margin: 0; background: #111820; color: #eef3f6; }
-    main { width: 100%; height: 100dvh; padding: 14px 18px; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; }
-    h1 { font-size: 23px; margin: 0 0 3px; }
-    h2 { font-size: 19px; margin: 0 0 8px; }
-    .muted { color: #9eacb8; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-width: 0; }
-    .topbar p { margin: 0; font-size: 12px; }
+    body { margin: 0; color: #eef3f2; background: radial-gradient(circle at 7% -15%, #17343a 0, transparent 34%), radial-gradient(circle at 97% 0, #332625 0, transparent 28%), #0d141b; }
+    main { width: min(1800px, 100%); height: 100dvh; margin: auto; padding: 18px 22px; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 16px; }
+    h1 { font-size: 22px; font-weight: 700; letter-spacing: .3px; margin: 0 0 3px; }
+    h2 { font-size: 19px; margin: 0; }
+    .muted { color: #94a8ae; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-width: 0; padding-bottom: 14px; border-bottom: 1px solid #ffffff16; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 13px; background: linear-gradient(145deg, #edbd78, #9b553e); color: #191411; font: 800 16px Georgia, serif; box-shadow: 0 5px 22px #d98d4430; }
+    .topbar p { margin: 0; font-size: 12px; letter-spacing: .25px; }
     .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-    .status { display: inline-block; padding: 7px 11px; border-radius: 20px; background: #51302d; color: #ffd5cf; font-size: 13px; }
-    .status.online { background: #1d4939; color: #b9f5d0; }
-    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 30%); gap: 14px; min-height: 0; }
-    .overview { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-    .card { background: #1c2833; border: 1px solid #354552; border-radius: 12px; padding: 12px 14px; margin: 0; min-width: 0; }
-    .advice { font-size: clamp(17px, 1.45vw, 22px); line-height: 1.4; border-left: 4px solid #e5ad50; min-height: 82px; max-height: 126px; overflow: auto; }
-    .enemy-alert { border-left: 4px solid #e37a62; color: #ffd6cb; }
+    .status { display: inline-flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 9px; border: 1px solid #76514c; background: #392729; color: #ffd5cf; font-size: 12px; white-space: nowrap; }
+    .status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #e89a88; box-shadow: 0 0 10px #e89a8866; }
+    .status.online { border-color: #376453; background: #17362f; color: #c5f0da; }
+    .status.online::before { background: #8bddb4; box-shadow: 0 0 10px #8bddb488; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(350px, 29%); gap: 16px; min-height: 0; }
+    .overview { display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding-right: 3px; }
+    .card { background: linear-gradient(145deg, #19272f, #17232c); border: 1px solid #344851; border-radius: 15px; padding: 14px 16px; margin: 0; min-width: 0; box-shadow: 0 10px 28px #00000019; }
+    .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .section-heading strong { font-size: 15px; letter-spacing: .3px; }
+    .section-heading small { font-size: 11px; color: #87a0a6; }
+    .advice-panel { border-color: #665441; background: linear-gradient(115deg, #302d29, #202a2e 44%, #19282c); }
+    .advice-panel .source { color: #e8b979; font-size: 12px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; }
+    .advice { font-size: clamp(16px, 1.25vw, 20px); line-height: 1.55; min-height: 54px; max-height: 136px; margin-top: 10px; overflow: auto; }
+    .enemy-alert { border-left: 3px solid #e37a62; background: #3d2b2b; color: #ffd6cb; margin-top: 10px; }
     .enemy-alert[hidden] { display: none; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
-    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 1px; padding: 0; flex: 1 0 265px; min-height: 265px; overflow: hidden; background: #354552; }
-    .stats > div { background: #1c2833; padding: 10px 12px; min-width: 0; min-height: 0; overflow: hidden; }
-    .label { color: #aebbc5; font-size: 12px; margin-bottom: 4px; }
-    .value { font-size: clamp(14px, 1.1vw, 18px); overflow-wrap: anywhere; line-height: 1.3; }
-    .stats .value { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
-    .stats select.value { display: block; width: 100%; padding: 5px 6px; font-size: 14px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 0; flex: none; background: none; border: 0; box-shadow: none; }
+    .stats > div { min-width: 0; min-height: 76px; overflow: hidden; padding: 12px 13px; background: #1a2a32; border: 1px solid #30434c; border-radius: 12px; }
+    .stats > div:nth-child(-n+5) { background: linear-gradient(145deg, #21353b, #1c2c34); border-color: #3a5657; }
+    .label { color: #93aeb1; font-size: 11px; font-weight: 600; letter-spacing: .35px; margin-bottom: 7px; }
+    .value { font-size: clamp(14px, 1.12vw, 18px); overflow-wrap: anywhere; line-height: 1.35; }
+    .stats .value { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+    #clock, #economy { font-size: clamp(19px, 1.5vw, 24px); font-weight: 700; color: #f1d3a2; font-variant-numeric: tabular-nums; }
+    .stats select.value { display: block; width: 100%; padding: 6px 8px; font-size: 13px; }
     .gpm-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
-    .gpm-panel { flex-shrink: 0; padding: 10px 12px; }
-    .gpm-panel strong { font-size: 14px; }
+    .gpm-panel { flex-shrink: 0; padding: 15px 17px; }
+    .gpm-panel strong { font-size: 15px; }
     .gpm-change { font-size: 12px; color: #9eacb8; white-space: nowrap; }
     .gpm-change.down { color: #f28a7b; }
     .gpm-change.up { color: #81d7b6; }
-    .gpm-legend { display: flex; gap: 14px; margin-top: 5px; color: #aebbc5; font-size: 11px; }
+    .gpm-legend { display: flex; gap: 14px; margin-top: 8px; color: #93aeb1; font-size: 11px; }
     .gpm-legend span::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 2px; background: #81d7b6; }
     .gpm-legend span:last-child::before { background: #f28a7b; }
     .gpm-viewport { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
     #gpmChart { display: block; height: 158px; margin-top: 3px; }
     .gpm-axis { display: flex; justify-content: space-between; color: #9eacb8; font-size: 11px; line-height: 1; }
-    .ai-config { padding: 9px 12px; flex-shrink: 0; }
+    .ai-config { padding: 12px 15px; flex-shrink: 0; }
     .ai-config[open] { max-height: min(65vh, 540px); overflow: auto; }
     .ai-config summary { cursor: pointer; line-height: 1.5; }
-    .ai-config summary #aiStatus { color: #b9cbd6; font-size: 13px; margin-left: 8px; }
+    .ai-config summary #aiStatus { color: #9ab2b7; font-size: 12px; margin-left: 10px; }
     .ai-config summary #aiUsageCompact { color: #e9c581; font-size: 13px; margin-left: 8px; white-space: nowrap; }
     code { color: #e9c581; }
-    select, button, textarea { background: #273a49; color: #eef3f6; border: 1px solid #567083; border-radius: 8px; padding: 7px 9px; }
-    textarea { width: 100%; height: 76px; font: inherit; resize: none; }
-    .question { border-left: 4px solid #69b5c9; display: flex; flex-direction: column; min-height: 0; height: 100%; }
-    .question p { font-size: 13px; line-height: 1.5; margin: 0 0 12px; }
-    .question form { flex-shrink: 0; }
-    .quick-questions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-    .quick-questions button { font-size: 12px; padding: 5px 8px; border-radius: 16px; }
-    .roster { flex-shrink: 0; margin-top: 12px; padding: 10px; border-radius: 8px; background: #17232d; font-size: 13px; line-height: 1.45; }
+    select, button, textarea, input { font: inherit; background: #22343d; color: #eef3f6; border: 1px solid #415965; border-radius: 9px; padding: 8px 10px; }
+    button { cursor: pointer; transition: background .16s, border-color .16s, transform .16s; }
+    button:hover { background: #304650; border-color: #729399; }
+    button:active { transform: translateY(1px); }
+    :is(button, select, textarea, input, summary):focus-visible { outline: 2px solid #e7bc77; outline-offset: 2px; }
+    .top-actions button { padding: 9px 11px; font-size: 12px; white-space: nowrap; }
+    textarea { width: 100%; height: 92px; resize: vertical; }
+    .field-input { width: 100%; }
+    .ai-config .grid { align-items: end; }
+    .ai-config .grid label { min-width: 0; }
+    .ai-config .grid :is(select, input) { width: 100%; }
+    .question { display: flex; flex-direction: column; min-height: 0; height: 100%; padding: 20px; border-color: #355963; background: linear-gradient(165deg, #1d3037, #18262f 35%, #17232b); }
+    .question h2 { font-size: 20px; letter-spacing: .25px; }
+    .question > p { font-size: 12px; line-height: 1.55; margin: 5px 0 18px; }
+    .question form { flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+    .question form textarea { flex: 0 0 100%; background: #14242c; border-color: #47616a; padding: 12px; font-size: 14px; line-height: 1.5; }
+    #sendQuestion { background: linear-gradient(120deg, #e4b873, #c88e53); color: #1d1b19; border-color: #d7a767; font-weight: 700; padding: 9px 16px; }
+    #sendQuestion:hover { background: #f0c886; }
+    #askStatus { font-size: 12px; }
+    .quick-title { margin-top: 22px; color: #a8bec0; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+    .quick-questions { display: flex; flex-wrap: wrap; gap: 7px; margin: 9px 0 0; }
+    .quick-questions button { font-size: 12px; padding: 6px 9px; border-radius: 8px; background: #20343d; border-color: #3a5660; }
+    .roster { flex-shrink: 0; margin-top: 20px; padding: 12px; border-radius: 10px; border: 1px solid #344b54; background: #13232c; font-size: 12px; line-height: 1.5; }
     .roster div + div { margin-top: 6px; }
-    .question-list { flex: 1; min-height: 0; overflow-y: auto; margin-top: 12px; }
-    .question-list article { border-top: 1px solid #354552; padding: 12px 0; overflow-wrap: anywhere; line-height: 1.5; }
+    .roster strong { color: #d8e7e4; }
+    .question-list { flex: 1; min-height: 0; overflow-y: auto; margin-top: 16px; padding-right: 3px; scrollbar-width: thin; }
+    .question-list article { border-top: 1px solid #344a52; padding: 14px 0; overflow-wrap: anywhere; line-height: 1.55; }
     .question-list article:first-child { border-top: 0; }
     .question-list .answer-label { color: #9eacb8; margin-top: 6px; }
     .markdown-answer > :first-child { margin-top: 3px; }
@@ -74,44 +101,51 @@
     .markdown-answer a { color: #8ad7e9; }
     .markdown-answer table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; }
     .markdown-answer th, .markdown-answer td { border: 1px solid #567083; padding: 4px 6px; }
-    .compact-details { flex-shrink: 0; padding: 8px 12px; font-size: 13px; }
+    .compact-details { flex-shrink: 0; padding: 11px 15px; font-size: 12px; }
     .compact-details summary { cursor: pointer; }
     .compact-details[open] { max-height: 160px; overflow: auto; }
     .compact-details p { margin: 8px 0 0; }
     .source { font-size: 12px; min-height: 16px; }
-    #gameStatusDialog { width: min(460px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; margin: auto; padding: 18px; border: 1px solid #567083; border-radius: 12px; background: #1c2833; color: #eef3f6; }
+    #gameStatusDialog { width: min(460px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; margin: auto; padding: 20px; border: 1px solid #49616a; border-radius: 15px; background: #1a2a33; color: #eef3f6; box-shadow: 0 24px 70px #0009; }
     #gameStatusDialog::backdrop { background: #000b; }
     .match-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
     #gameStatusDialog label { display: block; font-size: 13px; }
     #manualNote { margin-top: 6px; height: 92px; }
     .dialog-footer { display: flex; gap: 8px; margin-top: 10px; }
-    @media (max-width: 1200px) {
-      .workspace { grid-template-columns: minmax(0, 1fr) 340px; }
-      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); }
-      .stats { flex-basis: 300px; min-height: 300px; }
-      .stats > div { padding: 7px 9px; }
-      .label { font-size: 11px; margin-bottom: 2px; }
+    @media (max-width: 1250px) {
+      .workspace { grid-template-columns: minmax(0, 1fr) 345px; }
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-    @media (max-width: 850px) {
-      .workspace { grid-template-columns: minmax(0, 1fr) 300px; gap: 8px; }
-      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(8, minmax(0, 1fr)); }
-      .stats { flex-basis: 420px; min-height: 420px; }
-      .topbar p { display: none; }
-      main { padding: 8px; gap: 8px; }
+    @media (max-width: 1050px) {
+      html, body { height: auto; overflow: auto; }
+      main { height: auto; min-height: 100dvh; }
+      .workspace { display: flex; flex-direction: column; }
+      .overview { overflow: visible; padding-right: 0; }
+      .question { min-height: 560px; height: auto; }
+      .question-list { min-height: 180px; }
     }
-    @media (max-height: 780px) {
-      main { padding-top: 8px; padding-bottom: 8px; gap: 7px; }
-      .overview { gap: 6px; }
-      .advice { min-height: 60px; max-height: 86px; }
-      #gpmChart { height: 135px; }
-      .compact-details { padding-top: 5px; padding-bottom: 5px; }
+    @media (max-width: 700px) {
+      main { padding: 12px; gap: 13px; }
+      .topbar { flex-wrap: wrap; gap: 12px; }
+      .top-actions { justify-content: flex-start; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .card { padding: 12px; }
+      .stats > div { min-height: 72px; padding: 10px; }
+      .gpm-heading { flex-wrap: wrap; }
+      .gpm-legend { flex-wrap: wrap; gap: 6px 14px; }
+      .question { padding: 16px; }
+    }
+    @media (max-height: 780px) and (min-width: 1051px) {
+      main { padding-top: 10px; padding-bottom: 10px; gap: 10px; }
+      .advice { max-height: 90px; }
+      #gpmChart { height: 145px; }
     }
   </style>
 </head>
 <body>
 <main>
   <header class="topbar">
-    <div><h1>Dota 2 新手节奏教练</h1><p class="muted">本机官方 GSI 状态 · 模型建议</p></div>
+    <div class="brand"><div class="brand-mark" aria-hidden="true">D2</div><div><h1>Dota 2 节奏教练</h1><p class="muted">实时战况 · 发育曲线 · 局中建议</p></div></div>
     <div class="top-actions">
       <div id="connection" class="status">等待连接</div>
       <button id="gameStatusButton" type="button">游戏状态</button>
@@ -121,27 +155,12 @@
   </header>
   <div class="workspace">
   <section class="overview" aria-label="比赛状态与建议">
-  <details id="aiConfig" class="card ai-config">
-    <summary><strong>模型配置</strong><span id="aiStatus">读取中…</span><span id="aiUsageCompact"></span></summary>
-    <div class="grid" style="margin-top:14px">
-      <label><span class="label">模型服务商</span><select id="aiProvider" class="value">
-        <option value="off">关闭模型（只显示数据）</option><option value="openrouter">OpenRouter</option>
-        <option value="deepseek">DeepSeek</option><option value="openai">OpenAI</option>
-      </select></label>
-      <label><span class="label">模型 ID</span><input id="aiModel" class="value" style="width:90%;background:#273a49;color:#eef3f6;border:1px solid #567083;border-radius:8px;padding:8px" autocomplete="off"></label>
-      <label><span class="label">API Key（已配置可留空）</span><input id="aiKey" type="password" class="value" style="width:90%;background:#273a49;color:#eef3f6;border:1px solid #567083;border-radius:8px;padding:8px" autocomplete="off"></label>
-    </div>
-    <button id="saveAi" type="button" style="margin-top:12px">保存模型设置</button>
-    <div class="grid" style="margin-top:16px">
-      <div><div class="label">最近一次请求用量</div><div id="lastUsage" class="value">等待模型返回…</div></div>
-      <div><div class="label">本次服务启动累计</div><div id="sessionUsage" class="value">等待模型返回…</div></div>
-    </div>
-    <p id="responseModel" class="muted"></p>
-    <p class="muted">页面输入的密钥仅保存在本地服务进程内，重启后需重新输入；环境变量配置的密钥会在启动时读取。启用后会将筛选后的 GSI 状态发往所选服务商，可能产生费用。每次提醒触发时调用，默认约 45 秒一次。</p>
-  </details>
-  <div id="adviceSource" class="muted source"></div>
-  <div id="enemyAlert" class="card enemy-alert" hidden></div>
-  <div id="advice" class="card advice">等待 Dota 2 官方 GSI 数据…</div>
+  <section class="card advice-panel" aria-label="局中建议">
+    <div class="section-heading"><strong>局中建议</strong><span id="adviceSource" class="source"></span></div>
+    <div id="enemyAlert" class="card enemy-alert" hidden></div>
+    <div id="advice" class="advice">等待 Dota 2 官方 GSI 数据…</div>
+  </section>
+  <div class="section-heading"><strong>对局快照</strong><small>官方 GSI 实时数据</small></div>
   <div class="card stats">
     <div><div class="label">比赛时间</div><div id="clock" class="value">—</div></div>
     <div><div class="label">英雄 / 等级</div><div id="hero" class="value">—</div></div>
@@ -177,10 +196,34 @@
       <option value="4">4 号位</option><option value="5">5 号位</option></select>
     <p class="muted">“当前区域”会随走位变化。开局分路根据前 7 分钟持续坐标估计；几号位是根据你选择的核心或辅助与分路作出的常见推断，不能由 GSI 直接读取。页面仅在本机 <code>127.0.0.1</code> 提供。</p>
   </details>
+  <details id="aiConfig" class="card ai-config">
+    <summary><strong>模型配置</strong><span id="aiStatus">读取中…</span><span id="aiUsageCompact"></span></summary>
+    <div class="grid" style="margin-top:14px">
+      <label><span class="label">模型服务商</span><select id="aiProvider" class="value">
+        <option value="off">关闭模型（只显示数据）</option><option value="openrouter">OpenRouter</option>
+        <option value="deepseek">DeepSeek</option><option value="openai">OpenAI</option>
+      </select></label>
+      <label><span class="label">模型 ID</span><input id="aiModel" class="value field-input" autocomplete="off"></label>
+      <label><span class="label">API Key（已配置可留空）</span><input id="aiKey" type="password" class="value field-input" autocomplete="off"></label>
+    </div>
+    <button id="saveAi" type="button" style="margin-top:12px">保存模型设置</button>
+    <div class="grid" style="margin-top:16px">
+      <div><div class="label">最近一次请求用量</div><div id="lastUsage" class="value">等待模型返回…</div></div>
+      <div><div class="label">本次服务启动累计</div><div id="sessionUsage" class="value">等待模型返回…</div></div>
+    </div>
+    <p id="responseModel" class="muted"></p>
+    <p class="muted">页面输入的密钥仅保存在本地服务进程内，重启后需重新输入；环境变量配置的密钥会在启动时读取。启用后会将筛选后的 GSI 状态发往所选服务商，可能产生费用。每次提醒触发时调用，默认约 45 秒一次。</p>
+  </details>
   </section>
   <section id="ask" class="card question">
     <h2>问教练</h2>
     <p class="muted">Ctrl+F11 聚焦输入框。Enter 发送，Shift+Enter 换行；暂停教练时不能发送。</p>
+    <form id="askForm">
+      <textarea id="questionInput" maxlength="500" placeholder="例如：我现在应该继续补刀，还是去支援队友？" required></textarea>
+      <button id="sendQuestion" type="submit">发送问题</button>
+      <span id="askStatus" class="muted" role="status"></span>
+    </form>
+    <div class="quick-title">快速提问</div>
     <div class="quick-questions" aria-label="常用问题">
       <button type="button" data-question="现在对面谁是后期核心？">对面后期核心</button>
       <button type="button" data-question="我现在更适合刷钱还是参团？">刷钱还是参团</button>
@@ -192,11 +235,6 @@
       <button type="button" data-question="我现在怎样更安全有效地提升经济？优先补线、刷野还是跟队友行动？">提升经济</button>
       <button type="button" data-question="这局团战我应该注意什么？结合我的英雄、装备和已知敌方阵容说明站位与目标。">团战站位</button>
     </div>
-    <form id="askForm">
-      <textarea id="questionInput" maxlength="500" placeholder="例如：我现在应该继续补刀，还是去支援队友？" required></textarea>
-      <button id="sendQuestion" type="submit">发送问题</button>
-      <span id="askStatus" class="muted" role="status"></span>
-    </form>
     <div class="roster" aria-label="本局已识别阵容">
       <div><strong>本局己方：</strong><span id="rosterAllies">等待 GSI…</span></div>
       <div><strong>本局敌方：</strong><span id="rosterEnemies">等待敌方露头…</span></div>
