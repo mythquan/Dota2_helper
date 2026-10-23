@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.log
+*.tmp
+.test_*
+.env
+.env.*
+manual_context.json
+match_memory.json
+*.backup-*.cfg
+tmpskh0qlu8/

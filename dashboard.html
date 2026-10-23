@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dota 2 新手节奏教练</title>
+  <style>
+    :root { color-scheme: dark; font-family: "Microsoft YaHei", system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+    body { margin: 0; background: #111820; color: #eef3f6; }
+    main { width: 100%; height: 100dvh; padding: 14px 18px; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; }
+    h1 { font-size: 23px; margin: 0 0 3px; }
+    h2 { font-size: 19px; margin: 0 0 8px; }
+    .muted { color: #9eacb8; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-width: 0; }
+    .topbar p { margin: 0; font-size: 12px; }
+    .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .status { display: inline-block; padding: 7px 11px; border-radius: 20px; background: #51302d; color: #ffd5cf; font-size: 13px; }
+    .status.online { background: #1d4939; color: #b9f5d0; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 30%); gap: 14px; min-height: 0; }
+    .overview { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; }
+    .card { background: #1c2833; border: 1px solid #354552; border-radius: 12px; padding: 12px 14px; margin: 0; min-width: 0; }
+    .advice { font-size: clamp(17px, 1.45vw, 22px); line-height: 1.4; border-left: 4px solid #e5ad50; min-height: 82px; max-height: 126px; overflow: auto; }
+    .enemy-alert { border-left: 4px solid #e37a62; color: #ffd6cb; }
+    .enemy-alert[hidden] { display: none; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 1px; padding: 0; flex: 1; min-height: 0; overflow: hidden; background: #354552; }
+    .stats > div { background: #1c2833; padding: 10px 12px; min-width: 0; min-height: 0; overflow: hidden; }
+    .label { color: #aebbc5; font-size: 12px; margin-bottom: 4px; }
+    .value { font-size: clamp(14px, 1.1vw, 18px); overflow-wrap: anywhere; line-height: 1.3; }
+    .stats .value { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
+    .stats select.value { display: block; width: 100%; padding: 5px 6px; font-size: 14px; }
+    .gpm-cell { display: flex; flex-direction: column; }
+    .gpm-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
+    .gpm-change { font-size: 11px; color: #9eacb8; white-space: nowrap; }
+    .gpm-change.down { color: #f28a7b; }
+    .gpm-change.up { color: #81d7b6; }
+    #gpmChart { display: block; width: 100%; height: 44px; min-height: 28px; margin-top: 3px; overflow: visible; }
+    .gpm-axis { display: flex; justify-content: space-between; color: #9eacb8; font-size: 10px; line-height: 1; }
+    .ai-config { padding: 9px 12px; flex-shrink: 0; }
+    .ai-config[open] { max-height: min(65vh, 540px); overflow: auto; }
+    .ai-config summary { cursor: pointer; line-height: 1.5; }
+    .ai-config summary #aiStatus { color: #b9cbd6; font-size: 13px; margin-left: 8px; }
+    .ai-config summary #aiUsageCompact { color: #e9c581; font-size: 13px; margin-left: 8px; white-space: nowrap; }
+    code { color: #e9c581; }
+    select, button, textarea { background: #273a49; color: #eef3f6; border: 1px solid #567083; border-radius: 8px; padding: 7px 9px; }
+    textarea { width: 100%; height: 76px; font: inherit; resize: none; }
+    .question { border-left: 4px solid #69b5c9; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+    .question p { font-size: 13px; line-height: 1.5; margin: 0 0 12px; }
+    .question form { flex-shrink: 0; }
+    .quick-questions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    .quick-questions button { font-size: 12px; padding: 5px 8px; border-radius: 16px; }
+    .roster { flex-shrink: 0; margin-top: 12px; padding: 10px; border-radius: 8px; background: #17232d; font-size: 13px; line-height: 1.45; }
+    .roster div + div { margin-top: 6px; }
+    .question-list { flex: 1; min-height: 0; overflow-y: auto; margin-top: 12px; }
+    .question-list article { border-top: 1px solid #354552; padding: 12px 0; overflow-wrap: anywhere; line-height: 1.5; }
+    .question-list article:first-child { border-top: 0; }
+    .question-list .answer-label { color: #9eacb8; margin-top: 6px; }
+    .markdown-answer > :first-child { margin-top: 3px; }
+    .markdown-answer > :last-child { margin-bottom: 0; }
+    .markdown-answer p, .markdown-answer ul, .markdown-answer ol, .markdown-answer blockquote { margin: 6px 0; }
+    .markdown-answer ul, .markdown-answer ol { padding-left: 22px; }
+    .markdown-answer h1, .markdown-answer h2, .markdown-answer h3 { font-size: 15px; margin: 10px 0 5px; }
+    .markdown-answer blockquote { padding-left: 10px; border-left: 3px solid #69b5c9; color: #bdcbd4; }
+    .markdown-answer code { font-family: Consolas, monospace; background: #12202a; padding: 1px 4px; border-radius: 4px; }
+    .markdown-answer pre { overflow-x: auto; padding: 9px; background: #12202a; border-radius: 6px; white-space: pre-wrap; }
+    .markdown-answer pre code { padding: 0; }
+    .markdown-answer a { color: #8ad7e9; }
+    .markdown-answer table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; }
+    .markdown-answer th, .markdown-answer td { border: 1px solid #567083; padding: 4px 6px; }
+    .compact-details { flex-shrink: 0; padding: 8px 12px; font-size: 13px; }
+    .compact-details summary { cursor: pointer; }
+    .compact-details[open] { max-height: 160px; overflow: auto; }
+    .compact-details p { margin: 8px 0 0; }
+    .source { font-size: 12px; min-height: 16px; }
+    #gameStatusDialog { width: min(460px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; margin: auto; padding: 18px; border: 1px solid #567083; border-radius: 12px; background: #1c2833; color: #eef3f6; }
+    #gameStatusDialog::backdrop { background: #000b; }
+    .match-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    #gameStatusDialog label { display: block; font-size: 13px; }
+    #manualNote { margin-top: 6px; height: 92px; }
+    .dialog-footer { display: flex; gap: 8px; margin-top: 10px; }
+    @media (max-width: 1200px) {
+      .workspace { grid-template-columns: minmax(0, 1fr) 340px; }
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(6, minmax(0, 1fr)); }
+      .stats > div { padding: 7px 9px; }
+      .label { font-size: 11px; margin-bottom: 2px; }
+    }
+    @media (max-width: 850px) {
+      .workspace { grid-template-columns: minmax(0, 1fr) 300px; gap: 8px; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr)); }
+      .gpm-cell { grid-row: span 2; }
+      .topbar p { display: none; }
+      main { padding: 8px; gap: 8px; }
+    }
+    @media (max-height: 780px) {
+      main { padding-top: 8px; padding-bottom: 8px; gap: 7px; }
+      .overview { gap: 6px; }
+      .advice { min-height: 60px; max-height: 86px; }
+      .compact-details { padding-top: 5px; padding-bottom: 5px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="topbar">
+    <div><h1>Dota 2 新手节奏教练</h1><p class="muted">本机官方 GSI 状态 · 模型建议</p></div>
+    <div class="top-actions">
+      <div id="connection" class="status">等待连接</div>
+      <button id="gameStatusButton" type="button">游戏状态</button>
+      <button id="toggleCoach" type="button">暂停教练</button>
+      <button id="browserVoice" type="button">启用网页语音</button>
+    </div>
+  </header>
+  <div class="workspace">
+  <section class="overview" aria-label="比赛状态与建议">
+  <details id="aiConfig" class="card ai-config">
+    <summary><strong>模型配置</strong><span id="aiStatus">读取中…</span><span id="aiUsageCompact"></span></summary>
+    <div class="grid" style="margin-top:14px">
+      <label><span class="label">模型服务商</span><select id="aiProvider" class="value">
+        <option value="off">关闭模型（只显示数据）</option><option value="openrouter">OpenRouter</option>
+        <option value="deepseek">DeepSeek</option><option value="openai">OpenAI</option>
+      </select></label>
+      <label><span class="label">模型 ID</span><input id="aiModel" class="value" style="width:90%;background:#273a49;color:#eef3f6;border:1px solid #567083;border-radius:8px;padding:8px" autocomplete="off"></label>
+      <label><span class="label">API Key（已配置可留空）</span><input id="aiKey" type="password" class="value" style="width:90%;background:#273a49;color:#eef3f6;border:1px solid #567083;border-radius:8px;padding:8px" autocomplete="off"></label>
+    </div>
+    <button id="saveAi" type="button" style="margin-top:12px">保存模型设置</button>
+    <div class="grid" style="margin-top:16px">
+      <div><div class="label">最近一次请求用量</div><div id="lastUsage" class="value">等待模型返回…</div></div>
+      <div><div class="label">本次服务启动累计</div><div id="sessionUsage" class="value">等待模型返回…</div></div>
+    </div>
+    <p id="responseModel" class="muted"></p>
+    <p class="muted">页面输入的密钥仅保存在本地服务进程内，重启后需重新输入；环境变量配置的密钥会在启动时读取。启用后会将筛选后的 GSI 状态发往所选服务商，可能产生费用。每次提醒触发时调用，默认约 45 秒一次。</p>
+  </details>
+  <div id="adviceSource" class="muted source"></div>
+  <div id="enemyAlert" class="card enemy-alert" hidden></div>
+  <div id="advice" class="card advice">等待 Dota 2 官方 GSI 数据…</div>
+  <div class="card stats">
+    <div><div class="label">比赛时间</div><div id="clock" class="value">—</div></div>
+    <div><div class="label">英雄 / 等级</div><div id="hero" class="value">—</div></div>
+    <div><div class="label">K / D / A</div><div id="kda" class="value">—</div></div>
+    <div><div class="label">血量 / 蓝量</div><div id="resources" class="value">—</div></div>
+    <div class="gpm-cell"><div class="label">金钱 / GPM</div><div class="gpm-heading"><div id="economy" class="value">—</div><span id="gpmChange" class="gpm-change"></span></div><svg id="gpmChart" viewBox="0 0 300 44" preserveAspectRatio="none" role="img" aria-label="本局 GPM 曲线"></svg><div class="gpm-axis"><span id="gpmStart">每分钟一个点</span><span id="gpmEnd"></span></div></div>
+    <div><div class="label">大招状态</div><div id="ultimate" class="value">—</div></div>
+    <div><div class="label">主物品栏</div><div id="items" class="value">—</div></div>
+    <div><div class="label">当前地图区域（坐标推断）</div><div id="region" class="value">—</div></div>
+    <div><div class="label">官方 GSI 实时坐标</div><div id="coordinates" class="value">—</div></div>
+    <div><div class="label">队友小地图位置（GSI）</div><div id="teammates" class="value">—</div></div>
+    <div><div class="label">当前露头的敌方英雄（GSI 小地图）</div><div id="visibleEnemies" class="value">—</div></div>
+    <div><div class="label">开局分路（足够观测后推断）</div><div id="lane" class="value">—</div></div>
+    <div><div class="label">本局分路（你可确认）</div><select id="laneChoice" class="value">
+      <option value="">自动 / 未指定</option><option value="safelane">安全路</option>
+      <option value="mid">中路</option><option value="offlane">劣势路</option>
+    </select></div>
+    <div><div class="label">你这局打什么类型？</div><select id="roleGroup" class="value">
+      <option value="">还不确定</option><option value="core">核心</option><option value="support">辅助</option>
+    </select></div>
+    <div><div class="label">建议所用位置</div><div id="roleSummary" class="value">尚未确认</div></div>
+  </div>
+  <details class="card compact-details"><summary>高级：我知道自己是几号位 · 数据说明</summary>
+    <p class="muted">手动选择会覆盖“核心 / 辅助 + 分路”的位置推断。</p>
+    <select id="role" class="value"><option value="">使用自动推断</option><option value="1">1 号位</option>
+      <option value="2">2 号位</option><option value="3">3 号位</option>
+      <option value="4">4 号位</option><option value="5">5 号位</option></select>
+    <p class="muted">“当前区域”会随走位变化。开局分路根据前 7 分钟持续坐标估计；几号位是根据你选择的核心或辅助与分路作出的常见推断，不能由 GSI 直接读取。页面仅在本机 <code>127.0.0.1</code> 提供。</p>
+  </details>
+  </section>
+  <section id="ask" class="card question">
+    <h2>问教练</h2>
+    <p class="muted">Ctrl+F11 聚焦输入框。Enter 发送，Shift+Enter 换行；暂停教练时不能发送。</p>
+    <div class="quick-questions" aria-label="常用问题">
+      <button type="button" data-question="现在对面谁是后期核心？">对面后期核心</button>
+      <button type="button" data-question="我现在更适合刷钱还是参团？">刷钱还是参团</button>
+      <button type="button" data-question="这局对我威胁最大的敌方英雄是谁？为什么？">最大威胁</button>
+      <button type="button" data-question="我现在应该跟哪位队友一起行动？">跟谁行动</button>
+      <button type="button" data-question="接下来一分钟我最该做什么？">下一步做什么</button>
+      <button type="button" data-question="根据我的英雄、现有装备和已知阵容，下一件装备优先买什么？说明原因和备选。">出装建议</button>
+      <button type="button" data-question="我现在的对线或所在区域应该怎么打？结合血蓝、等级和已知敌方英雄给出建议。">对线打法</button>
+      <button type="button" data-question="我现在怎样更安全有效地提升经济？优先补线、刷野还是跟队友行动？">提升经济</button>
+      <button type="button" data-question="这局团战我应该注意什么？结合我的英雄、装备和已知敌方阵容说明站位与目标。">团战站位</button>
+    </div>
+    <form id="askForm">
+      <textarea id="questionInput" maxlength="500" placeholder="例如：我现在应该继续补刀，还是去支援队友？" required></textarea>
+      <button id="sendQuestion" type="submit">发送问题</button>
+      <span id="askStatus" class="muted" role="status"></span>
+    </form>
+    <div class="roster" aria-label="本局已识别阵容">
+      <div><strong>本局己方：</strong><span id="rosterAllies">等待 GSI…</span></div>
+      <div><strong>本局敌方：</strong><span id="rosterEnemies">等待敌方露头…</span></div>
+      <div class="muted">累计识别；不代表敌人此刻仍在视野中。</div>
+    </div>
+    <div id="questionList" class="question-list" aria-live="polite"></div>
+  </section>
+  </div>
+</main>
+<dialog id="gameStatusDialog" aria-labelledby="gameStatusTitle">
+  <h2 id="gameStatusTitle">游戏状态与补充信息</h2>
+  <p class="muted">可手动告诉教练 GSI 暂时读不到的情况。新一局会清除上局记忆；本局结束会停止自动建议。</p>
+  <div class="match-actions">
+    <button id="newMatchButton" type="button">新一局开始</button>
+    <button id="endMatchButton" type="button">本局结束</button>
+  </div>
+  <label for="manualNote">本局补充说明（最多 300 字）</label>
+  <textarea id="manualNote" maxlength="300" placeholder="例如：这局我打辅助；对面五号位经常游走。"></textarea>
+  <p class="muted">这段文字会在教练启用时随下一次建议或提问发送给所选模型，并标明由你提供；暂停时仅保存在本机。</p>
+  <div class="dialog-footer">
+    <button id="saveMatchNote" type="button">保存说明</button>
+    <button id="clearMatchNote" type="button">清空说明</button>
+    <button id="closeGameStatus" type="button">关闭</button>
+  </div>
+  <div id="matchContextFeedback" class="source" role="status"></div>
+</dialog>
+<script src="/marked.min.js"></script>
+<script>
+const el = id => document.getElementById(id);
+const shown = x => x == null || x === '' ? '未知' : x;
+const svgNS = 'http://www.w3.org/2000/svg';
+function drawGpmChart(history) {
+  const points = Array.isArray(history) ? history.filter(p => Number.isInteger(p.minute) && Number.isFinite(p.gpm)) : [];
+  const chart = el('gpmChart');
+  chart.replaceChildren();
+  el('gpmStart').textContent = points.length ? `${points[0].minute} 分钟` : '等待 GPM 数据';
+  el('gpmEnd').textContent = points.length ? `${points[points.length - 1].minute} 分钟` : '';
+  const previous = points.at(-2), latest = points.at(-1);
+  const change = el('gpmChange');
+  const delta = previous && latest ? latest.gpm - previous.gpm : null;
+  change.textContent = delta == null ? '' : `${delta > 0 ? '+' : ''}${delta} GPM`;
+  change.className = `gpm-change${delta < 0 ? ' down' : delta > 0 ? ' up' : ''}`;
+  if (!points.length) return;
+  const values = points.map(p => p.gpm);
+  const low = Math.min(...values), high = Math.max(...values);
+  const padding = Math.max(20, (high - low) * 0.15);
+  const minY = Math.max(0, low - padding), maxY = high + padding;
+  const firstMinute = points[0].minute, lastMinute = latest.minute;
+  const xy = p => ({x: 5 + 290 * (p.minute - firstMinute) / Math.max(1, lastMinute - firstMinute),
+                    y: 39 - 34 * (p.gpm - minY) / Math.max(1, maxY - minY)});
+  const line = (a, b, color) => {
+    const path = document.createElementNS(svgNS, 'line');
+    path.setAttribute('x1', a.x); path.setAttribute('y1', a.y);
+    path.setAttribute('x2', b.x); path.setAttribute('y2', b.y);
+    path.setAttribute('stroke', color); path.setAttribute('stroke-width', '2.5');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    chart.append(path);
+  };
+  for (let i = 1; i < points.length; i++) {
+    if (points[i].minute !== points[i - 1].minute + 1) continue;
+    line(xy(points[i - 1]), xy(points[i]), points[i].gpm < points[i - 1].gpm ? '#f28a7b' : '#81d7b6');
+  }
+  for (const point of points) {
+    const pos = xy(point), dot = document.createElementNS(svgNS, 'circle');
+    dot.setAttribute('cx', pos.x); dot.setAttribute('cy', pos.y);
+    dot.setAttribute('r', point === latest ? '3.5' : '2.5');
+    dot.setAttribute('fill', point === latest ? '#f5d183' : '#c6e9dd');
+    const title = document.createElementNS(svgNS, 'title');
+    title.textContent = `${point.minute} 分钟：${point.gpm} GPM`;
+    dot.append(title); chart.append(dot);
+  }
+  chart.setAttribute('aria-label', `本局 GPM 曲线，${points.length} 个分钟采样点，最新 ${latest.gpm}，范围 ${low} 到 ${high}`);
+}
+const markdownTags = new Set(['p','br','strong','em','del','ul','ol','li','blockquote','pre','code',
+  'h1','h2','h3','h4','h5','h6','hr','a','table','thead','tbody','tr','th','td']);
+const discardTags = new Set(['script','style','iframe','object','embed','svg','math','form','input',
+  'button','video','audio','img']);
+function renderMarkdown(answer, container) {
+  if (!window.marked) { container.textContent = answer; return; }
+  try {
+    const parsed = new DOMParser().parseFromString(marked.parse(answer, {gfm:true, breaks:true}), 'text/html');
+    function safeNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent);
+      if (node.nodeType !== Node.ELEMENT_NODE) return document.createDocumentFragment();
+      const tag = node.localName.toLowerCase();
+      if (discardTags.has(tag)) return document.createDocumentFragment();
+      const output = markdownTags.has(tag) ? document.createElement(tag) : document.createDocumentFragment();
+      if (tag === 'a') {
+        const href = node.getAttribute('href');
+        if (href) {
+          try {
+            const url = new URL(href, location.href);
+            if (url.protocol === 'https:' || url.protocol === 'http:') {
+              output.href = url.href;
+              output.target = '_blank';
+              output.rel = 'noopener noreferrer';
+            }
+          } catch (_) { /* Show link text without a destination. */ }
+        }
+      }
+      for (const child of node.childNodes) output.append(safeNode(child));
+      return output;
+    }
+    for (const child of parsed.body.childNodes) container.append(safeNode(child));
+  } catch (_) { container.textContent = answer; }
+}
+let browserVoice = false;
+let lastSpoken = -1;
+let lastEnemyAlertSpoken = 0;
+let coachPaused = false;
+let aiFormDirty = false;
+let lastQuestionFingerprint = '';
+let savedManualNote = '';
+const defaultModels = {openrouter:'deepseek/deepseek-v4.1-flash-1017', deepseek:'deepseek-flash', openai:'gpt-6-luna'};
+el('aiProvider').addEventListener('change', () => {
+  aiFormDirty = true;
+  el('aiModel').value = defaultModels[el('aiProvider').value] || '';
+});
+el('aiModel').addEventListener('input', () => { aiFormDirty = true; });
+el('aiKey').addEventListener('input', () => { aiFormDirty = true; });
+el('saveAi').addEventListener('click', async () => {
+  const provider = el('aiProvider').value;
+  const model = el('aiModel').value.trim() || defaultModels[provider] || null;
+  const api_key = el('aiKey').value.trim();
+  try {
+    const response = await fetch('/ai-settings', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({provider, model, api_key})});
+    if (!response.ok) throw new Error(response.status === 400 ? '请检查服务商、模型 ID 和 API Key。' : 'HTTP ' + response.status);
+    el('aiKey').value = '';
+    aiFormDirty = false;
+    refresh();
+  } catch (error) { alert('模型设置失败：' + error.message); }
+});
+el('browserVoice').addEventListener('click', () => {
+  browserVoice = !browserVoice;
+  el('browserVoice').textContent = browserVoice ? '关闭网页语音' : '启用网页语音';
+  if (browserVoice) { lastSpoken = -1; refresh(); }
+  else if ('speechSynthesis' in window) speechSynthesis.cancel();
+});
+el('toggleCoach').addEventListener('click', async () => {
+  const button = el('toggleCoach');
+  button.disabled = true;
+  try {
+    const response = await fetch('/coach-control', {method:'POST',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({paused: !coachPaused})});
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    if (!coachPaused && 'speechSynthesis' in window) speechSynthesis.cancel();
+    await refresh();
+  } catch (_) { alert('教练状态切换失败，请确认本地服务仍在运行。'); }
+  finally { button.disabled = false; }
+});
+el('gameStatusButton').addEventListener('click', () => {
+  el('manualNote').value = savedManualNote;
+  el('matchContextFeedback').textContent = '';
+  el('gameStatusDialog').showModal();
+});
+el('closeGameStatus').addEventListener('click', () => el('gameStatusDialog').close());
+async function updateMatchContext(action, note = '') {
+  const buttons = ['newMatchButton','endMatchButton','saveMatchNote','clearMatchNote'];
+  buttons.forEach(id => { el(id).disabled = true; });
+  try {
+    const response = await fetch('/match-context', {method:'POST',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({action, note})});
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || `HTTP ${response.status}`);
+    el('matchContextFeedback').textContent = action === 'set_note' ? '补充说明已保存。' :
+      action === 'new_match' ? '已标记新一局，旧局记忆已清除。' : '已标记本局结束。';
+    await refresh();
+  } catch (error) { el('matchContextFeedback').textContent = '保存失败：' + error.message; }
+  finally { buttons.forEach(id => { el(id).disabled = false; }); }
+}
+el('newMatchButton').addEventListener('click', () => updateMatchContext('new_match'));
+el('endMatchButton').addEventListener('click', () => updateMatchContext('ended'));
+el('saveMatchNote').addEventListener('click', () => updateMatchContext('set_note', el('manualNote').value));
+el('clearMatchNote').addEventListener('click', () => { el('manualNote').value = ''; updateMatchContext('set_note', ''); });
+el('role').addEventListener('change', async () => {
+  const role = el('role').value ? Number(el('role').value) : null;
+  try {
+    const response = await fetch('/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({role})});
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    refresh();
+  } catch (_) { alert('位置设置失败，请确认本地服务仍在运行。'); }
+});
+el('roleGroup').addEventListener('change', async () => {
+  const role_group = el('roleGroup').value || null;
+  try {
+    const response = await fetch('/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({role_group})});
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    refresh();
+  } catch (_) { alert('核心 / 辅助设置失败，请确认本地服务仍在运行。'); }
+});
+el('laneChoice').addEventListener('change', async () => {
+  const lane = el('laneChoice').value || null;
+  try {
+    const response = await fetch('/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({lane})});
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    refresh();
+  } catch (_) { alert('分路设置失败，请确认本地服务仍在运行。'); }
+});
+el('askForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (el('sendQuestion').disabled) return;
+  const question = el('questionInput').value.trim();
+  if (!question) return;
+  el('sendQuestion').disabled = true;
+  el('askStatus').textContent = '正在提交…';
+  try {
+    const response = await fetch('/ask', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question})});
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || `HTTP ${response.status}`);
+    el('questionInput').value = '';
+    el('askStatus').textContent = '正在回答…';
+    refresh();
+  } catch (error) { el('askStatus').textContent = error.message; }
+  finally { el('sendQuestion').disabled = false; }
+});
+el('questionInput').addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.altKey ||
+      event.isComposing || event.keyCode === 229) return;
+  event.preventDefault();
+  el('askForm').requestSubmit();
+});
+document.querySelectorAll('.quick-questions button').forEach(button => {
+  button.addEventListener('click', () => {
+    if (el('sendQuestion').disabled) return;
+    el('questionInput').value = button.dataset.question;
+    el('askForm').requestSubmit();
+  });
+});
+function focusQuestion() {
+  if (location.hash === '#ask') {
+    el('questionInput').focus();
+  }
+}
+window.addEventListener('hashchange', focusQuestion);
+window.addEventListener('focus', () => { el('questionInput').focus(); refresh(); });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refresh();
+});
+window.addEventListener('load', () => setTimeout(focusQuestion, 100));
+async function refresh() {
+  try {
+    const response = await fetch('/status', {cache: 'no-store'});
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    coachPaused = data.coach_paused;
+    el('toggleCoach').textContent = coachPaused ? '恢复教练' : '暂停教练';
+    savedManualNote = data.manual_context_note || '';
+    el('gameStatusButton').textContent = data.manual_game_status === 'ended' ? '游戏状态 · 本局结束' :
+      data.manual_game_status === 'new_match' ? '游戏状态 · 等待新局' : '游戏状态';
+    el('connection').textContent = data.manual_game_status === 'ended' ? '你已标记本局结束' :
+      data.manual_game_status === 'new_match' ? '你已标记新一局 · 等待 GSI' :
+      data.in_progress ? '比赛数据已连接' :
+      data.connected ? 'GSI 已连接，等待比赛开始（' + (data.gsi_game_state || '状态未知') + '）' :
+      '等待游戏数据 / 连接已超时';
+    if (coachPaused && data.connected) el('connection').textContent += ' · 教练已暂停';
+    el('connection').classList.toggle('online', data.connected);
+    el('advice').textContent = data.message;
+    const roster = data.match_roster || {allies:[], enemies:[], allies_unknown:5, enemies_unknown:5};
+    const lineup = (members, unknown) => members.map(x => x.hero_zh).join('、') +
+      (unknown ? `${members.length ? '；' : ''}未知 ${unknown} 人` : '（已齐）');
+    el('rosterAllies').textContent = lineup(roster.allies || [], roster.allies_unknown ?? 5);
+    el('rosterEnemies').textContent = lineup(roster.enemies || [], roster.enemies_unknown ?? 5);
+    const questions = data.questions || [];
+    const fingerprint = JSON.stringify(questions);
+    if (fingerprint !== lastQuestionFingerprint) {
+      const list = el('questionList');
+      list.replaceChildren();
+      for (const entry of [...questions].reverse()) {
+        const article = document.createElement('article');
+        const title = document.createElement('strong');
+        title.textContent = '你：' + entry.question;
+        const label = document.createElement('div');
+        label.className = 'answer-label';
+        label.textContent = '教练：';
+        const answer = document.createElement('div');
+        answer.className = 'markdown-answer';
+        if (entry.status === 'done' && entry.answer) renderMarkdown(entry.answer, answer);
+        else answer.textContent = entry.answer || '正在回答…';
+        article.append(title, label, answer);
+        list.append(article);
+      }
+      lastQuestionFingerprint = fingerprint;
+    }
+    if (questions.length && !data.question_pending && el('askStatus').textContent === '正在回答…')
+      el('askStatus').textContent = '';
+    const providerNames = {openrouter:'OpenRouter', deepseek:'DeepSeek', openai:'OpenAI'};
+    el('aiStatus').textContent = data.ai_ready ?
+      `${providerNames[data.ai_provider] || data.ai_provider} · ${data.ai_model}${coachPaused ? ' · 已暂停' : data.ai_pending ? ' · 正在生成建议…' : ''}` :
+      '模型未启用（只显示数据）';
+    el('aiUsageCompact').textContent = data.ai_ready ?
+      (data.usage_reported_calls ? `· 本次累计 ${data.session_token_usage.total_tokens.toLocaleString()} token` : '· 等待 token 用量') : '';
+    const usageText = usage => usage ?
+      `输入 ${usage.input_tokens ?? '—'} / 输出 ${usage.output_tokens ?? '—'} / 合计 ${usage.total_tokens ?? '—'} token` :
+      '等待模型返回用量…';
+    el('lastUsage').textContent = usageText(data.last_token_usage);
+    el('sessionUsage').textContent = data.usage_reported_calls ?
+      `${usageText(data.session_token_usage)}（${data.usage_reported_calls} 次已报告用量）` : '等待模型返回用量…';
+    el('responseModel').textContent = data.last_response_model ? `最近一次响应模型：${data.last_response_model}` : '';
+    el('adviceSource').textContent = coachPaused ? '教练已暂停；仅在本机接收 GSI' :
+      data.message_source === 'model' ? '模型建议' :
+      data.ai_pending ? '模型分析中' :
+      data.message_source === 'error' ? '模型请求失败' :
+      data.message_source === 'off' ? '模型未启用；只显示 GSI 数据' :
+      '等待模型建议';
+    if (!aiFormDirty) {
+      el('aiProvider').value = data.ai_provider || 'off';
+      el('aiModel').value = data.ai_model || '';
+    }
+    if (browserVoice && 'speechSynthesis' in window && data.message_source === 'model' && data.advice_seq !== lastSpoken) {
+      speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(data.message);
+      utterance.lang = 'zh-CN';
+      utterance.rate = 1.15;
+      speechSynthesis.speak(utterance);
+      lastSpoken = data.advice_seq;
+    }
+    if (document.activeElement !== el('role')) el('role').value = data.role == null ? '' : String(data.role);
+    if (document.activeElement !== el('roleGroup')) el('roleGroup').value = data.role_group || '';
+    if (document.activeElement !== el('laneChoice')) el('laneChoice').value = data.lane_override || '';
+    const regions = {top:'上路附近', mid:'中路附近', bottom:'下路附近', radiant_base:'天辉基地', dire_base:'夜魇基地',
+      river:'河道附近', radiant_side:'天辉半区非兵线区域', dire_side:'夜魇半区非兵线区域', other:'其他区域', unknown:'未知'};
+    const shortRegions = {top:'上路', mid:'中路', bottom:'下路', radiant_base:'天辉基地', dire_base:'夜魇基地',
+      river:'河道', radiant_side:'天辉半区', dire_side:'夜魇半区', other:'其他', unknown:'未知'};
+    const lanes = {safelane:'安全路', offlane:'劣势路', mid:'中路', unknown:'观测不足'};
+    const group = data.role_group === 'core' ? '核心' : data.role_group === 'support' ? '辅助' : '';
+    el('roleSummary').textContent = data.effective_role == null ?
+      (group ? group + '；几号位尚不能判断' : '尚未确认；可先选核心或辅助') :
+      (group ? group + '；' : '') + data.effective_role + ' 号位' +
+      (data.role_source === 'manual' ? '（你指定）' : '（按分路推断）');
+    el('region').textContent = regions[data.current_region] || '未知';
+    el('teammates').textContent = data.teammates == null ? '未收到小地图英雄数据' :
+      data.teammates.length ? data.teammates.map(a => `${a.hero_zh}·${shortRegions[a.region_inferred] || '未知'}`).join('、') :
+      '暂未识别到队友英雄图标';
+    el('visibleEnemies').textContent = data.visible_enemies == null ? '未收到小地图敌方数据' :
+      data.visible_enemies.length ? data.visible_enemies.map(e => `${e.hero_zh}·${shortRegions[e.region_inferred] || '未知'}`).join('、') :
+      '当前没有识别到露头的敌方英雄';
+    el('teammates').title = el('teammates').textContent;
+    el('visibleEnemies').title = el('visibleEnemies').textContent;
+    const missing = data.enemy_missing_alert;
+    const missingText = missing ? `${missing.hero_zh}的小地图图标已消失；最后露头在${regions[missing.region_inferred] || '未知区域'}。当前去向未知。` : '';
+    el('enemyAlert').hidden = !missing;
+    el('enemyAlert').textContent = missingText;
+    if (missing && browserVoice && 'speechSynthesis' in window && data.enemy_alert_seq !== lastEnemyAlertSpoken) {
+      const warning = new SpeechSynthesisUtterance(missingText);
+      warning.lang = 'zh-CN';
+      warning.rate = 1.15;
+      speechSynthesis.speak(warning);
+      lastEnemyAlertSpoken = data.enemy_alert_seq;
+    }
+    el('lane').textContent = lanes[data.starting_lane] || '观测不足';
+    const s = data.state;
+    drawGpmChart(data.gpm_history);
+    if (!s) {
+      for (const id of ['coordinates','clock','hero','kda','resources','economy','ultimate','items'])
+        el(id).textContent = '—';
+      return;
+    }
+    el('coordinates').textContent = s.xpos == null || s.ypos == null ? '未知' : `(${s.xpos}, ${s.ypos})`;
+    el('clock').textContent = Math.floor(s.clock / 60) + ':' + String(s.clock % 60).padStart(2, '0');
+    el('hero').textContent = (data.hero_zh || '未知英雄') + ' / ' + shown(s.level);
+    el('kda').textContent = `${s.kills} / ${s.deaths} / ${s.assists}`;
+    el('resources').textContent = `${shown(s.hp_percent)}% / ${shown(s.mana_percent)}%`;
+    el('economy').textContent = `${shown(s.gold)} / ${shown(s.gpm)}`;
+    const ult = {unknown:'未知', unlearned:'未学习', ready:'就绪', cooling:`冷却 ${s.ultimate_cooldown} 秒`};
+    el('ultimate').textContent = ult[s.ultimate] || '未知';
+    el('items').textContent = data.items_zh.length ? data.items_zh.join('、') : '空 / 未知';
+  } catch (_) {
+    el('connection').textContent = '本地服务未连接';
+    el('connection').classList.remove('online');
+  }
+}
+refresh();
+focusQuestion();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>
